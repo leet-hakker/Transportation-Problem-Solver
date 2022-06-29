@@ -12,6 +12,39 @@
 
 # When all stock is assigned, and all the demands are met, stop.
 
+def add_array(one, other):
+    if len(one) != len(other):
+        raise "Arrays not the same size"
+    if len(one[0]) != len(other[0]):
+        raise "Arrays not the same size"
+
+    new_array = [[] for i in one]
+    for i in range(len(one)):
+        for j in range(len(one)):
+            new_array[i][j] = one[i][j] + other[i][j]
+
+    return new_array
+
+def mul_array(one, other):
+    if isinstance(other, list):
+        if len(one) != len(other):
+            raise "Arrays not the same size"
+        if len(one[0]) != len(other[0]):
+            raise "Arrays not the same size"
+
+        new_array = [[] for i in one]
+        for i in range(len(one)):
+            for j in range(len(one[i])):
+                new_array[i][j] = one[i][j] * other[i][j]
+
+    else:
+        new_array = [[] for i in one]
+        for i in range(len(one)):
+            for j in range(len(one[i])):
+                new_array[i][j] = one[i][j] * other
+
+    return new_array
+
 def north_west_corner_method(supply, demand):
     solution = [[None for j in supply] for i in demand]
 
@@ -89,9 +122,41 @@ def is_optimal(indices):
 
 def stepping_stone(supply, demand, costs, existing_solution, entering_cell):
     modifications = [[0 for i in supply] for j in demand]
-
-    modifications[entering_cell[0]][entering_cell[1]] = 1
     
+    sign = 1
+    modifications[entering_cell[0]][entering_cell[1]] = 1*sign
+    sign *= -1
+    
+
+
+    ## Get theta value
+
+    # Separate all negative modifications
+    negative_mods = [[] for i in modifications]
+    for i in range(len(modifications)):
+        for j in range(len(modifications[i])):
+            if modifications[i][j] < 0:
+                negative_mods[i][j] = -1
+            else:
+                negative_mods[i][j] = 0
+
+    # Iterate through and find the lowest cell with negative modification
+    # Set theta equal to that value
+    theta = 0
+    for i in range(len(negative_mods)):
+        for j in range(len(negative_mods[i])):
+            if negative_mods[i][j] == -1:
+                if existing_solution[i][j] < theta:
+                    theta = existing_solution[i][j]
+
+
+    ## Modify existing solution
+    # new_solution = existing_solution + (modifications * theta)
+
+    new_solution = add_array(existing_solution, mul_array(modifications, theta))
+
+    return new_solution
+
 
 def flatten(xss):
     return [x for xs in xss for x in xs]
