@@ -82,13 +82,16 @@ def is_optimal(indices):
 #   b) Apart from the entering cell, adjustments are only made to non-empty cells.
 
 # Once the cycle of adjustments has been found you transfer the maximum number of units
-# through this cycle. This will be euqal to the smallest number in the decreasing cells
+# through this cycle. This will be equal to the smallest number in the decreasing cells
 # (since you may not have negative units being transported).
 
 # You then adjust the solution to incorporate this improvement.
 
-def stepping_stone(costs, existing_solution):
-    pass
+def stepping_stone(supply, demand, costs, existing_solution, entering_cell):
+    modifications = [[0 for i in supply] for j in demand]
+
+    modifications[entering_cell[0]][entering_cell[1]] = 1
+    
 
 def flatten(xss):
     return [x for xs in xss for x in xs]
