@@ -120,13 +120,34 @@ def is_optimal(indices):
 
 # You then adjust the solution to incorporate this improvement.
 
+def check_horizontal(solution, modifications, current_cell):
+    width = len(solution)
+    left = [i for i in range(width-current_cell[1])]
+    right = [i for i in range(current_cell[1], width)]
+    assert width == len(left)+len(right)
+
+
+def check_vertical(solution, modifications, current_cell):
+    pass
+
 def stepping_stone(supply, demand, costs, existing_solution, entering_cell):
     modifications = [[0 for i in supply] for j in demand]
     
     sign = 1
     modifications[entering_cell[0]][entering_cell[1]] = 1*sign
     sign *= -1
-    
+    entering_cell = check_horizontal(existing_solution, modifications, entering_cell)
+
+#    while True:
+#        if entering_cell:
+#            modifications[entering_cell[0]][entering_cell[1]] = 1*sign
+#        else:
+#            entering_cell = check_vertical(existing_solution, entering_cell)
+#            if entering_cell:
+#                modifications[entering_cell[0]][entering_cell[1]] = 1*sign
+#            else:
+#                break
+
 
 
     ## Get theta value
@@ -210,9 +231,22 @@ def find_optimal_solution(costs, supply, demand):
         solution = stepping_stone()
         return solution, cost(solution, costs)
 
+def index_minimum(array):
+    min = array[0][0]
+    index = (0, 0)
+    for i in range(len(array)):
+        for j in range(len(array[i])):
+            if array[i][j] < min:
+                min = array[i][j]
+                index = (i, j)
+    return index
+
 initial_solution = north_west_corner_method(supply, demand)
 shadow_demand, shadow_supply = find_shadow_costs(initial_solution, costs)
 improvement_indices = find_improvement_indices(shadow_demand, shadow_supply, initial_solution, costs)
+entering_cell = index_minimum(improvement_indices)
+
+stepping_stone(supply, demand, costs, initial_solution, entering_cell)
 
 pretty_print_solution(initial_solution)
 print(cost(initial_solution, costs))
