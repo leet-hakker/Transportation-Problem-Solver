@@ -18,7 +18,7 @@ def add_array(one, other):
     if len(one[0]) != len(other[0]):
         raise "Arrays not the same size"
 
-    new_array = [[] for i in one]
+    new_array = [[0 for j in one[0]] for i in one]
     for i in range(len(one)):
         for j in range(len(one)):
             new_array[i][j] = one[i][j] + other[i][j]
@@ -32,18 +32,34 @@ def mul_array(one, other):
         if len(one[0]) != len(other[0]):
             raise "Arrays not the same size"
 
-        new_array = [[] for i in one]
+        new_array = [[0 for j in one[0]] for i in one]
         for i in range(len(one)):
             for j in range(len(one[i])):
                 new_array[i][j] = one[i][j] * other[i][j]
 
     else:
-        new_array = [[] for i in one]
+        new_array = [[0 for j in one[0]] for i in one]
         for i in range(len(one)):
             for j in range(len(one[i])):
                 new_array[i][j] = one[i][j] * other
 
     return new_array
+
+def none_to_zeros(array):
+    for i in range(len(array)):
+        for j in range(len(array[i])):
+            if array[i][j] == None:
+                array[i][j] = 0
+
+    return array
+
+def zeros_to_none(array):
+    for i in range(len(array)):
+        for j in range(len(array[i])):
+            if array[i][j] == 0:
+                array[i][j] = None
+
+    return array
 
 def north_west_corner_method(supply, demand):
     solution = [[None for j in supply] for i in demand]
@@ -121,45 +137,88 @@ def is_optimal(indices):
 # You then adjust the solution to incorporate this improvement.
 
 def check_horizontal(solution, modifications, current_cell):
+    print("checking horizontal")
     width = len(solution)
-    left = [i for i in range(width-current_cell[1])]
-    right = [i for i in range(current_cell[1], width)]
-    assert width == len(left)+len(right)
+    left = [i for i in range(width)][:current_cell[1]]
+    if current_cell[1] in left:
+        left.remove(current_cell[1])
+    right = [i for i in range(width)][current_cell[1]:]
+    if current_cell[1] in right:
+        right.remove(current_cell[1])
+
+    for i in left:
+        if (modifications[current_cell[0]][i] == 0) and solution[current_cell[0]][i]:
+            print(f"Found: {(current_cell[0], i)}")
+            return (current_cell[0], i)
+
+    for i in right:
+        if (modifications[current_cell[0]][i] == 0) and solution[current_cell[0]][i]:
+            print(f"Found: {(current_cell[0], i)}")
+            return (current_cell[0], i)
+
+    return False
 
 
 def check_vertical(solution, modifications, current_cell):
-    pass
+    print("checking vertical")
+    height = len(solution[0])
+    top = [i for i in range(height)][:current_cell[0]]
+    if current_cell[0] in top:
+        top.remove(current_cell[0])
+    bottom = [i for i in range(height)][current_cell[0]:]
+    if current_cell[0] in bottom:
+        bottom.remove(current_cell[0])
+
+    for i in top:
+        if (modifications[i][current_cell[1]] == 0) and solution[i][current_cell[1]]:
+            print(f"Found: {(i, current_cell[1])}")
+            return (i, current_cell[1])
+
+    for i in bottom:
+        if (modifications[i][current_cell[1]] == 0) and solution[i][current_cell[1]]:
+            print(f"Found: {(i, current_cell[1])}")
+            return (i, current_cell[1])
+
+    return False
 
 def stepping_stone(supply, demand, costs, existing_solution, entering_cell):
     modifications = [[0 for i in supply] for j in demand]
-    
+#    print(entering_cell)
     sign = 1
-    modifications[entering_cell[0]][entering_cell[1]] = 1*sign
-    sign *= -1
-    entering_cell = check_horizontal(existing_solution, modifications, entering_cell)
+    while True:
+        pretty_print_solution(modifications)
+        modifications[entering_cell[0]][entering_cell[1]] = 1*sign
+        sign *= -1
+        num_changes = 0
 
-#    while True:
-#        if entering_cell:
-#            modifications[entering_cell[0]][entering_cell[1]] = 1*sign
-#        else:
-#            entering_cell = check_vertical(existing_solution, entering_cell)
-#            if entering_cell:
-#                modifications[entering_cell[0]][entering_cell[1]] = 1*sign
-#            else:
-#                break
-
+        # Make rest of row invalid if the row now contains two changes
+        for i in range(len(modifications)):
+#            print(modifications[i][entering_cell[1]], end=", ")
+            if modifications[i][entering_cell[1]] != 0:
+                num_changes += 1
+#        print()
+#        print(num_changes)
+        if num_changes >= 2:
+            for i in range(len(modifications)):
+                if modifications[i][entering_cell[1]] == 0:
+                    modifications[i][entering_cell[1]] = 2
+#        print(', '.join([str(modifications[i][entering_cell[1]]) for i in range(len(modifications))]))
+        new_entering_cell = check_horizontal(existing_solution, modifications, entering_cell)
+        if not new_entering_cell:
+            new_entering_cell = check_vertical(existing_solution, modifications, entering_cell)
+        entering_cell = new_entering_cell
+        if not entering_cell:
+            break
 
 
     ## Get theta value
 
     # Separate all negative modifications
-    negative_mods = [[] for i in modifications]
+    negative_mods = [[0 for j in range(len(modifications[0]))] for i in modifications]
     for i in range(len(modifications)):
         for j in range(len(modifications[i])):
             if modifications[i][j] < 0:
                 negative_mods[i][j] = -1
-            else:
-                negative_mods[i][j] = 0
 
     # Iterate through and find the lowest cell with negative modification
     # Set theta equal to that value
@@ -174,7 +233,11 @@ def stepping_stone(supply, demand, costs, existing_solution, entering_cell):
     ## Modify existing solution
     # new_solution = existing_solution + (modifications * theta)
 
+    existing_solution = none_to_zeros(existing_solution)
+
     new_solution = add_array(existing_solution, mul_array(modifications, theta))
+
+    new_solution = zeros_to_none(new_solution)
 
     return new_solution
 
@@ -246,7 +309,7 @@ shadow_demand, shadow_supply = find_shadow_costs(initial_solution, costs)
 improvement_indices = find_improvement_indices(shadow_demand, shadow_supply, initial_solution, costs)
 entering_cell = index_minimum(improvement_indices)
 
-stepping_stone(supply, demand, costs, initial_solution, entering_cell)
+solution = stepping_stone(supply, demand, costs, initial_solution, entering_cell)
 
-pretty_print_solution(initial_solution)
+pretty_print_solution(solution)
 print(cost(initial_solution, costs))
